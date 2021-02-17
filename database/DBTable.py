@@ -204,10 +204,15 @@ class DBTable(object):
         
     def getDataFrame(self,condition,fields='*'):
         import pandas as pd 
-        if isinstance(fields, list):
-            sql = "select {} from {} where {}".format(",".join(fields),self.tableName,condition)
+        if condition is None:
+            condition = ""
         else:
-            sql = "select * from {} where {}".format(self.tableName,condition)
+            condition = "where {}".format(condition)
+            
+        if isinstance(fields, list):
+            sql = "select {} from {} {}".format(",".join(fields),self.tableName,condition)
+        else:
+            sql = "select * from {} {}".format(self.tableName,condition)
         #print(sql)
         return pd.read_sql(sql,self.connection)
         
