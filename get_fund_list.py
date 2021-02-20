@@ -4,33 +4,16 @@ Created on Feb 17, 2021
 @author: borisw
 '''
 
-from datetime import date, datetime
+from datetime import datetime
 
-from database.DBTable import DBRecord, DBTable
+from database.DBTable import DBTable
 from database.dbCon import get_sqlite_conn
+from database.FundInfoRecord import FundInfo
 
 import requests
 import js2py
 
-
-
-## define the table fields for FundInfo
-class FundInfo(DBRecord):
-    code = ""
-    name = ""
-    net_per_unit = 0.0
-    net_acc  = 0.0
-    daily_inc_val = 0.0
-    daily_inc_pct = 0.0 
-    buy_ava = True 
-    sell_ava = True 
-    fee = 0.0 
-    company_code = ""
-    update_date = date(2021,2,16)    
-
-    __keys__ = ['code']
-    
-    
+  
 def get_funds_info(table,pageIdx,pages=200):
     url = "http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=zde,asc&page={},{}&dt=1613400650082&atfc=&onlySale=0".format(pageIdx,pages)
     js_var = requests.get(url).text
@@ -77,7 +60,6 @@ def get_funds_info(table,pageIdx,pages=200):
         get_funds_info(table,pageIdx + 1,pages)
         
 
-    
 
 if __name__ == '__main__':
     
@@ -87,8 +69,3 @@ if __name__ == '__main__':
         fundInfoTable = DBTable(conn,"FundInfo",FundInfo)
         get_funds_info(fundInfoTable, 1, 200)
         
-        
-        
-        
-    
-     
