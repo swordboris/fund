@@ -14,7 +14,7 @@ import requests
 import js2py
 
   
-def get_funds_info(table,pageIdx,pages=200):
+def get_funds_info(code2company,table,pageIdx,pages=200):
     url = "http://fund.eastmoney.com/Data/Fund_JJJZ_Data.aspx?t=1&lx=1&letter=&gsid=&text=&sort=zde,asc&page={},{}&dt=1613400650082&atfc=&onlySale=0".format(pageIdx,pages)
     js_var = requests.get(url).text
     
@@ -27,18 +27,16 @@ def get_funds_info(table,pageIdx,pages=200):
     datas = db['datas']
     
     #print("page download finished!", total_pages, curpage)
-    
+
     for data in datas:
         fundInfo = FundInfo()
         fundInfo.code = data[0]
         fundInfo.name = data[1]
         
         try:
-            fundInfo.net_per_unit = float(data[3])
-                
+            fundInfo.net_per_unit = float(data[3])               
      
-            fundInfo.net_acc = float(data[4])
-                
+            fundInfo.net_acc = float(data[4])                
     
             fundInfo.daily_inc_val = float(data[7])
                 
@@ -50,6 +48,8 @@ def get_funds_info(table,pageIdx,pages=200):
             
     
             fundInfo.fee = float(data[17][:-1])
+            
+            fundInfo.company_code = code2company[fundInfo.code]
         except:
             pass
         
@@ -57,7 +57,7 @@ def get_funds_info(table,pageIdx,pages=200):
         table.addRecords([fundInfo])
         
     if curpage < total_pages:
-        get_funds_info(table,pageIdx + 1,pages)
+        get_funds_info(code2company,table,pageIdx + 1,pages)
         
 
 
@@ -67,5 +67,15 @@ if __name__ == '__main__':
     with get_sqlite_conn("fund") as conn:
         ## create table FundInfo 
         fundInfoTable = DBTable(conn,"FundInfo",FundInfo)
-        get_funds_info(fundInfoTable, 1, 200)
+        
+            ## get company code from table
+        df = fundInfoTable.getDataFrame(None,['code','company_code'])
+        code2company = dict()
+        for row in df.itertuples():
+            code2company[getattr(row,'code')] = getattr(row,'company_code')
+        
+        print(code2company)
+    
+    
+        get_funds_info(code2company,fundInfoTable, 1, 200)
         
