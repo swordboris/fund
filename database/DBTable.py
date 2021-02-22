@@ -225,6 +225,6 @@ class DBTable(object):
         cursor = dbConn.cursor()
 
         cursor.execute(sql)
-        dbConn.commit()
+        #dbConn.commit()
 
 
