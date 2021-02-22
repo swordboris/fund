@@ -16,6 +16,20 @@ from datetime import datetime
 from database.dbCon import get_sqlite_conn
 
 
+import concurrent
+from concurrent.futures import ThreadPoolExecutor
+
+
+def my_task(code,fundCompleted,f):
+    if code not in fundCompleted:  
+        with get_sqlite_conn("fund") as conn:  
+            table = DBTable(conn,"FundDaily_{}".format(code),FundDailyRec)   
+            get_net_value(table, code) 
+            
+            f.write("{}\n".format(code))  
+
+    
+
 def get_net_value(table,code, curr_page=1,total_num = 0):
     time_ms = int(round(time.time() * 1000))
     url = "http://api.fund.eastmoney.com/f10/lsjz?callback=&fundCode={}&pageIndex={}&pageSize=200&startDate=&endDate=&_={}".format(
@@ -32,7 +46,7 @@ def get_net_value(table,code, curr_page=1,total_num = 0):
     
     jobj = json.loads(js_var)
     
-
+    reclist = []
     for item in jobj['Data']['LSJZList']:
         #print(total_num,item)
         
@@ -45,9 +59,11 @@ def get_net_value(table,code, curr_page=1,total_num = 0):
             rec.ljjz = float(item['LJJZ'])
         if len(item['JZZZL']):
             rec.zzl = float(item['JZZZL'])
-        table.addRecords([rec])        
-        
+             
+        reclist.append(rec)
         total_num += 1
+        
+    table.addRecords(reclist)   
        
     totalCount = jobj['TotalCount']
     pageIndex = jobj['PageIndex']
@@ -74,24 +90,37 @@ if __name__ == "__main__":
             fundCompleted.add(code.strip())
     else:
         f = open(filename,'w')
-        
+      
+      
+    try:  
     
-    with get_sqlite_conn("fund") as conn:
-        ## create table FundInfo 
-        
-        fundInfoTab = DBTable(conn,"FundInfo",FundInfo) 
-        
-        df = fundInfoTab.getDataFrame(None, ['code'])  
-        
-        for code in df.code.values:
+        with get_sqlite_conn("fund") as conn:
+            ## create table FundInfo 
             
-            if code not in fundCompleted:
+            fundInfoTab = DBTable(conn,"FundInfo",FundInfo) 
+            
+            df = fundInfoTab.getDataFrame(None, ['code'])  
+            
                 
-                table = DBTable(conn,"FundDaily_{}".format(code),FundDailyRec)   
-                get_net_value(table, code) 
+        with ThreadPoolExecutor() as executor:
+            future2code = {executor.submit(my_task,code,fundCompleted,f): code for code in df.code.values }
+            for future in concurrent.futures.as_completed(future2code):
                 
-                f.write("{}\n".format(code))  
-                f.flush()
+                d = future2code[future]
+                
+                print(d)
+                try:
+                    future.result()
+                except Exception as err:
+                
+                    print(err) 
+                        
+                
+    except Exception as err:
+        print(err)
+        f.flush()
+            
+
             
     f.close()
     
