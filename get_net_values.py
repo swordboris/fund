@@ -23,7 +23,8 @@ from concurrent.futures import ThreadPoolExecutor
 def my_task(code,fundCompleted,f):
     if code not in fundCompleted:  
         with get_sqlite_conn("fund") as conn:  
-            table = DBTable(conn,"FundDaily_{}".format(code),FundDailyRec)   
+            table = DBTable(conn,"FundDaily_{}".format(code),FundDailyRec) 
+ 
             get_net_value(table, code) 
             
             f.write("{}\n".format(code))  
@@ -59,6 +60,9 @@ def get_net_value(table,code, curr_page=1,total_num = 0):
             rec.ljjz = float(item['LJJZ'])
         if len(item['JZZZL']):
             rec.zzl = float(item['JZZZL'])
+            
+        if len(item['FHFCZ']):
+            rec.fh = float(item['FHFCZ'])
              
         reclist.append(rec)
         total_num += 1
@@ -102,7 +106,7 @@ if __name__ == "__main__":
             df = fundInfoTab.getDataFrame(None, ['code'])  
             
                 
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(1) as executor:
             future2code = {executor.submit(my_task,code,fundCompleted,f): code for code in df.code.values }
             for future in concurrent.futures.as_completed(future2code):
                 

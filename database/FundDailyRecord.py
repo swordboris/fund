@@ -14,6 +14,7 @@ class FundDailyRec(DBRecord):
     dwjz = 0.0
     ljjz = 0.0
     zzl = 0.0  
+    fh = 0.0
 
     __keys__ = ['date']
     

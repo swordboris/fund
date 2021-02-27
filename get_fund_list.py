@@ -30,7 +30,7 @@ def get_funds_info(code2company,table,pageIdx,pages=200):
     
     print("page download finished!", total_pages, curpage)
 
-    reclist = []
+
     for data in datas:
         fundInfo = FundInfo()
         fundInfo.code = data[0]
@@ -67,11 +67,9 @@ def get_funds_info(code2company,table,pageIdx,pages=200):
         fundDaily.date = datetime.strptime(showday[0],"%Y-%m-%d").date()
         fundDaily.dwjz = fundInfo.net_per_unit
         fundDaily.ljjz = fundInfo.net_acc
-        fundDaily.zzl = fundInfo.daily_inc_pct
+        fundDaily.zzl = fundInfo.daily_inc_pct        
         
-        reclist.append(fundDaily)
-        
-    dailyTable.addRecords(reclist)
+        dailyTable.addRecords([fundDaily])
         
         
         
@@ -94,8 +92,7 @@ if __name__ == '__main__':
         for row in df.itertuples():
             code2company[getattr(row,'code')] = getattr(row,'company_code')
         
-        print(code2company)
-    
+   
     
         get_funds_info(code2company,fundInfoTable, 1, 200)
         
